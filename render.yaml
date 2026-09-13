@@ -1,0 +1,28 @@
+# Blueprint për Render — URL permanent: https://goldeneaglecasino.onrender.com
+services:
+  - type: web
+    name: goldeneaglecasino
+    runtime: docker
+    plan: free
+    repo: https://github.com/eronmakica10-hub/laravelprojekt
+    envVars:
+      - key: APP_NAME
+        value: Golden Eagle Casino
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: error
