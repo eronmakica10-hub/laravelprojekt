@@ -23,6 +23,8 @@
   #betspot .stack{font-size:40px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
   #betspot.to-player{transform:translateY(160px) scale(.5);opacity:0}
   #betspot.to-dealer{transform:translateY(-160px) scale(.5);opacity:0}
+  @keyframes stampin{from{transform:rotate(-12deg) scale(2.4);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:1}}
+  #bjstamp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none;font-size:3rem;font-weight:900;text-shadow:0 4px 24px #000;transform:rotate(-12deg);animation:stampin .35s cubic-bezier(.2,1.6,.4,1) both}
 </style>
 
 <div class="max-w-3xl mx-auto text-center slidein">
@@ -98,6 +100,38 @@ function render(p,d,pv,dv,hide,reveal){
   document.getElementById('dval').textContent=(dv!==undefined&&!hide)?`(${dv})`:'';
 }
 function setBtns(playing){document.getElementById('hitBtn').disabled=!playing;document.getElementById('standBtn').disabled=!playing;document.getElementById('dealBtn').disabled=playing;}
+// vlera e dorës (pasqyrë e serverit) për zbulimin progresiv të bankës
+function bjVal(cards){
+  let t=0,a=0;
+  cards.forEach(c=>{ const v=c.v;
+    if(v==='A'){a++;t+=11;} else if(['J','Q','K'].includes(v))t+=10; else t+=parseInt(v);
+  });
+  while(t>21&&a>0){t-=10;a--;}
+  return t;
+}
+// banka zbulohet letër pas letre si në kazino të vërtetë
+async function revealDealer(d){
+  const del=document.getElementById('dealer');
+  for(let shown=1;shown<=d.length;shown++){
+    let html='';
+    for(let i=0;i<d.length;i++){
+      html+= i<shown ? cardHTML(d[i],i,shown,i===shown-1&&shown>1) : backHTML();
+    }
+    del.innerHTML=html;
+    const last=del.querySelectorAll('.bcard')[shown-1];
+    if(last&&shown>1)last.classList.add('just-flipped');
+    document.getElementById('dval').textContent=`(${bjVal(d.slice(0,shown))})`;
+    whoosh();
+    await new Promise(r=>setTimeout(r,650));
+  }
+}
+function showStamp(txt,color){
+  const old=document.getElementById('bjstamp'); if(old)old.remove();
+  const s=document.createElement('div'); s.id='bjstamp';
+  s.textContent=txt; s.style.color=color;
+  document.getElementById('bjtable').appendChild(s);
+  setTimeout(()=>{ s.style.transition='opacity .5s'; s.style.opacity='0'; setTimeout(()=>s.remove(),550); },2100);
+}
 function showBet(bet){
   const s=document.getElementById('betspot');
   s.classList.remove('to-player','to-dealer');s.style.opacity='1';
@@ -115,22 +149,28 @@ async function newGame(){
     pc=0;dc=0;chipSnd();showBet(bet);settle(j.balance,600);
     if(j.status==='playing'){render(j.player,j.dealer,j.pval,null,true,false);document.getElementById('msg').textContent=`Ke ${j.pval}. Hit apo Stand?`;setBtns(true);}
     else{render(j.player,j.dealer,j.pval,j.dval,false,true);document.getElementById('msg').textContent=j.message;setBtns(false);
-      if(j.status==='blackjack'){confetti(120);flyCoins('bjtable',14);moveChips('to-player');winSnd();setTimeout(()=>settle(j.balance,1200),900);toast(j.message,'win');}
-      else{moveChips('to-player');settle(j.balance,600);}}
+      if(j.status==='blackjack'){showStamp('BLACKJACK!','#4ade80');confetti(120);flyCoins('bjtable',14);moveChips('to-player');winSnd();setTimeout(()=>settle(j.balance,1200),900);toast(j.message,'win');}
+      else{showStamp('BARAZIM','#e2e8f0');moveChips('to-player');settle(j.balance,600);}}
   }catch(e){toast(e.message,'lose');}
 }
 async function hit(){
   try{const j=await api('/api/blackjack/hit',{},{settle:'manual'});
     if(j.status==='playing'){document.getElementById('player').innerHTML=j.player.map((c,i)=>{const n=i>=pc;if(n)setTimeout(whoosh,i*120);return cardHTML(c,i,j.player.length,n);}).join('');pc=j.player.length;document.getElementById('pval').textContent=`(${j.pval})`;}
-    else{render(j.player,j.dealer,j.pval,j.dval,false,true);document.getElementById('msg').textContent=j.message;setBtns(false);moveChips('to-dealer');settle(j.balance,700);toast(j.message,'lose');}
+    else{render(j.player,j.dealer,j.pval,j.dval,false,true);document.getElementById('msg').textContent=j.message;setBtns(false);showStamp('DOGJËT!','#f87171');moveChips('to-dealer');settle(j.balance,700);toast(j.message,'lose');}
   }catch(e){toast(e.message,'lose');}
 }
 async function stand(){
   try{const j=await api('/api/blackjack/stand',{},{settle:'manual'});
-    render(j.player,j.dealer,j.pval,j.dval,false,true);document.getElementById('msg').textContent=j.message;setBtns(false);
-    if(j.status==='win'){confetti(80);flyCoins('bjtable',14);moveChips('to-player');winSnd();setTimeout(()=>settle(j.balance,1200),900);toast(j.message,'win');}
-    else if(j.status==='push'){moveChips('to-player');settle(j.balance,600);toast(j.message,'info');}
-    else{moveChips('to-dealer');settle(j.balance,700);toast(j.message,'lose');}
+    // lojtari rri — dora e lojtarit + letra e parë e bankës
+    render(j.player,[j.dealer[0]],j.pval,null,true,false);
+    document.getElementById('msg').textContent='Banka po luan... 🎩';
+    setBtns(false);
+    await revealDealer(j.dealer);
+    document.getElementById('dval').textContent=`(${j.dval})`;
+    document.getElementById('msg').textContent=j.message;
+    if(j.status==='win'){showStamp('FITOVE!','#4ade80');confetti(80);flyCoins('bjtable',14);moveChips('to-player');winSnd();setTimeout(()=>settle(j.balance,1200),900);toast(j.message,'win');}
+    else if(j.status==='push'){showStamp('BARAZIM','#e2e8f0');moveChips('to-player');settle(j.balance,600);toast(j.message,'info');}
+    else{showStamp('HUMBËT','#f87171');moveChips('to-dealer');settle(j.balance,700);toast(j.message,'lose');}
   }catch(e){toast(e.message,'lose');}
 }
 </script>

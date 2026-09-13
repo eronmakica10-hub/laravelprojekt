@@ -44,6 +44,7 @@
   </div>
   <div class="text-2xl font-black mt-2">Doli: <span id="num" class="text-amber-300">?</span></div>
   <div id="msg" class="font-bold text-amber-200 h-7 mt-1">Zgjidh dhe tunde!</div>
+  <div id="dhist" class="flex justify-center gap-1.5 mt-2 flex-wrap text-sm font-black min-h-[2rem]"></div>
 
   <div class="grid grid-cols-2 gap-2 mt-4 text-sm font-black" id="choices">
     <button data-c="low" class="py-3 rounded-xl bg-blue-600 outline outline-4 outline-amber-400">⬇️ LOW 1-3 (x1.9)</button>
@@ -108,6 +109,15 @@ function finalRot(v){
   const base={1:[0,0],6:[0,180],3:[0,-90],4:[0,90],2:[-90,0],5:[90,0]}[v];
   return `rotateX(${base[0]+720}deg) rotateY(${base[1]+720}deg)`;
 }
+function pushDiceHist(v,won){
+  const box=document.getElementById('dhist');
+  const faces=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+  const s=document.createElement('span');
+  s.className='w-9 h-9 rounded-xl flex items-center justify-center text-xl border '+(won?'bg-green-600/30 border-green-500':'bg-red-600/20 border-red-500/50');
+  s.textContent=faces[v]||v;
+  box.prepend(s);
+  while(box.children.length>10)box.lastChild.remove();
+}
 async function roll(){
   const btn=document.getElementById('btn');btn.disabled=true;
   const cube=document.getElementById('cube'), wrap=document.getElementById('cubeWrap'), tray=document.getElementById('tray');
@@ -127,6 +137,7 @@ async function roll(){
     setTimeout(()=>thud(),620);
     setTimeout(()=>{
       document.getElementById('num').textContent=j.roll;
+      pushDiceHist(j.roll,j.won);
       if(j.won){
         document.getElementById('msg').textContent=`🎉 Fitimi neto +${j.profit}€!`;
         confetti(70); flyCoins('dicebox',12);

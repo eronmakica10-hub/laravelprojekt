@@ -40,7 +40,8 @@ class AuthController extends Controller
         }
 
         $user = UserStore::create($data['name'], $data['email'], $data['password']);
-        session(['user_id' => $user['id'], 'user_name' => $user['name'], 'balance' => $user['balance']]);
+        session(['user_id' => $user['id'], 'user_name' => $user['name'], 'user_avatar' => $user['avatar'] ?? '🦅', 'balance' => $user['balance']]);
+        session()->forget('is_guest');
         return redirect('/')->with('success', 'Mirësevjen ' . $user['name'] . '! Depozito nga 💳 Portofoli për të luajtur 🎰');
     }
 
@@ -59,13 +60,14 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Email ose fjalëkalim i gabuar.'])->withInput();
         }
 
-        session(['user_id' => $user['id'], 'user_name' => $user['name'], 'balance' => $user['balance']]);
+        session(['user_id' => $user['id'], 'user_name' => $user['name'], 'user_avatar' => $user['avatar'] ?? '🦅', 'balance' => $user['balance']]);
+        session()->forget('is_guest');
         return redirect('/')->with('success', 'Mirësev erdhe përsëri, ' . $user['name'] . '! 🎉');
     }
 
     public function logout()
     {
-        session()->forget(['user_id', 'user_name', 'bj', 'tickets']);
+        session()->forget(['user_id', 'user_name', 'user_avatar', 'is_guest', 'bj', 'tickets']);
         session(['balance' => 0]);
         return redirect('/')->with('success', 'Dole me sukses. Mirupafshim! 👋');
     }

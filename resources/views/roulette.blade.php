@@ -13,6 +13,7 @@
     </div>
     <div id="result" class="mt-3 text-5xl font-black h-16">🎡</div>
     <div id="rmsg" class="font-bold text-amber-200 h-6"></div>
+    <div id="rhist" class="flex justify-center gap-1.5 mt-2 flex-wrap text-sm font-black min-h-[1.75rem]"></div>
     <div class="text-[11px] text-white/40 mt-1">🔊 Mbaje zërin ndezur për efektin e topit</div>
   </div>
 
@@ -59,7 +60,7 @@ const cv=document.getElementById('wheel'), ctx=cv.getContext('2d');
 const CX=160, CY=160;
 const nums=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
 const reds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-let angle=0, ballAngle=0.6;
+let angle=0, ballAngle=0.6, ballR=126, winIdx=-1;
 const ARC=Math.PI*2/nums.length;
 
 function draw(){
@@ -100,6 +101,12 @@ function draw(){
     ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=2;
     ctx.fillText(n, 97, 0); ctx.restore();
   });
+  // xhepi fitues ndizet (kur topi bie brenda)
+  if(winIdx>=0){
+    const wa0=angle+winIdx*ARC, wa1=wa0+ARC;
+    ctx.beginPath(); ctx.arc(CX,CY,96,wa0,wa1);
+    ctx.strokeStyle='#fbbf24'; ctx.lineWidth=46; ctx.shadowColor='#fbbf24'; ctx.shadowBlur=18; ctx.stroke(); ctx.shadowBlur=0;
+  }
   // unaza e brendshme metalike
   let steel=ctx.createLinearGradient(CX-70,CY-70,CX+70,CY+70);
   steel.addColorStop(0,'#e7e5e4'); steel.addColorStop(.5,'#a8a29e'); steel.addColorStop(1,'#57534e');
@@ -120,15 +127,13 @@ function draw(){
   ctx.beginPath(); ctx.arc(CX,CY,26,0,7); ctx.fillStyle=gold; ctx.fill();
   ctx.fillStyle='#451a03'; ctx.font='black 19px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText('★',CX,CY+1);
-  // topi (i bardhë, me shkëlqim + hije)
-  const bx=CX+Math.cos(ballAngle)*126, by=CY+Math.sin(ballAngle)*126;
-  ctx.beginPath(); ctx.arc(bx+2.5,by+3.5,7,0,7); ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fill();
-  let ball=ctx.createRadialGradient(bx-2.5,by-2.5,1,bx,by,7.5);
+  // topi (i bardhë, me shkëlqim + hije) — bie nga kanali në xhep
+  const bx=CX+Math.cos(ballAngle)*ballR, by=CY+Math.sin(ballAngle)*ballR;
+  const bs=ballR<110?5.5:7; // topi "futet" pak kur bie në xhep
+  ctx.beginPath(); ctx.arc(bx+2.5,by+3.5,bs,0,7); ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fill();
+  let ball=ctx.createRadialGradient(bx-2.5,by-2.5,1,bx,by,bs+0.5);
   ball.addColorStop(0,'#ffffff'); ball.addColorStop(.65,'#e2e8f0'); ball.addColorStop(1,'#64748b');
-  ctx.beginPath(); ctx.arc(bx,by,7,0,7); ctx.fillStyle=ball; ctx.fill();
-  // treguesi i artë sipër
-  ctx.fillStyle='#fbbf24'; ctx.strokeStyle='#78350f'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(CX,-1); ctx.lineTo(CX-12,22); ctx.lineTo(CX+12,22); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(bx,by,bs,0,7); ctx.fillStyle=ball; ctx.fill();
 }
 draw();
 
@@ -147,6 +152,17 @@ function tick(){
   }catch(e){}
 }
 
+// historia e numrave të fundit (vetëm vizuale)
+function addHist(n,color){
+  const bg=color==='red'?'#a31621':color==='black'?'#1f2937':'#15803d';
+  const box=document.getElementById('rhist');
+  const s=document.createElement('span');
+  s.className='inline-flex items-center justify-center w-8 h-8 rounded-full text-white border-2 border-amber-400/70';
+  s.style.background=bg; s.textContent=n;
+  box.prepend(s);
+  while(box.children.length>10)box.lastChild.remove();
+}
+
 async function play(){
   const btn=document.getElementById('btn');btn.disabled=true;
   const numberBet=parseInt(document.getElementById('numInput').value||'0');
@@ -154,39 +170,54 @@ async function play(){
   try{
     const j=await api('/api/roulette/spin',{bet,type,number:numberBet},{settle:'manual'});
     const idx=nums.indexOf(j.number);
-    const pointer=-Math.PI/2;
-    // rrota rrotullohet dhe ndalet me numrin fitues te treguesi
-    const targetW = pointer-(idx+.5)*ARC;
+    // S'KA shigjetë: topi ndalet në një pozitë natyrale dhe xhepi
+    // ku bie topi është numri fitues — rrota ndalet ashtu që
+    // xhepi fitues të jetë saktësisht nën top
+    const finalBall = ballAngle - (Math.PI*2*6 + Math.random()*Math.PI*2);
+    const totalB = finalBall - ballAngle;
+    const targetW = finalBall-(idx+.5)*ARC;
     const curW = angle%(Math.PI*2);
-    const totalW = ((targetW-curW)%(Math.PI*2)+Math.PI*2)%(Math.PI*2) + Math.PI*2*5;
-    // topi rrotullohet në drejtim të kundërt dhe bie te treguesi
-    const startB = ballAngle, curB = startB%(Math.PI*2);
-    const totalB = -((((pointer-curB)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)) + Math.PI*2*7);
-    const startA=angle, t0=performance.now(), dur=5500;
+    const totalW = ((targetW-curW)%(Math.PI*2)+Math.PI*2)%(Math.PI*2) + Math.PI*2*4;
+    const startA=angle, startB=ballAngle, t0=performance.now(), dur=6000;
+    winIdx=-1; ballR=126; draw();
     let lastPk=-1;
+    const DROP_AT=0.62; // topi fillon me ra në xhepa pas 62% të kohës
     function frame(t){
       const p=Math.min(1,(t-t0)/dur);
-      const eW=1-Math.pow(1-p,4);            // rrota: ngadalësim i butë
-      const eB=1-Math.pow(1-p,3);            // topi: ritëm pak ndryshe (bie më herët)
+      // rrota: rrotullohet dhe ndalet me xhepin fitues te treguesi
+      const eW=1-Math.pow(1-p,5);
       angle=startA+totalW*eW;
+      // topi: rrotullohet në drejtim të kundërt, ndalet te treguesi pak më herët
+      const pb=Math.min(1,p/0.85);
+      const eB=1-Math.pow(1-pb,3);
       ballAngle=startB+totalB*eB;
+      // topi BIE nga kanali në xhep, me kërcime
+      if(p<DROP_AT){ ballR=126; }
+      else{
+        const q=(p-DROP_AT)/(1-DROP_AT);
+        const e=1-Math.pow(1-q,2);
+        const bounce=Math.sin(q*Math.PI*4)*(1-q)*9;
+        ballR=126+(96-126)*e+bounce;
+      }
       draw();
-      // klikim sa herë topi kalon një xhep (ngadalësohet natyrshëm me topin)
+      // klikim sa herë topi kalon një xhep (rrallohet kur bie)
       const rel=((ballAngle-angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
       const pk=Math.floor(rel/ARC);
-      if(pk!==lastPk){ lastPk=pk; if(p<0.93) tick(); }
+      if(pk!==lastPk){ lastPk=pk; if(p<0.9) tick(); }
       if(p<1) requestAnimationFrame(frame);
       else{
         tick();
-        const col=j.color==='red'?'🔴':j.color==='black'?'⚫':'🟢';
-        document.getElementById('result').textContent=`${col} ${j.number}`;
+        ballR=96; winIdx=idx; draw(); // topi pushon në xhepin fitues
+        const bg=j.color==='red'?'#a31621':j.color==='black'?'#1f2937':'#15803d';
+        document.getElementById('result').innerHTML=`<span class="inline-flex items-center justify-center w-16 h-16 rounded-full text-white border-4 border-amber-400" style="background:${bg}">${j.number}</span>`;
+        addHist(j.number,j.color);
         if(j.won){
-          document.getElementById('rmsg').textContent=`🎉 Fitimi neto +${j.profit}€!`;
+          document.getElementById('rmsg').textContent=`🎉 Topi ra në ${j.number}! Fitimi neto +${j.profit}€!`;
           confetti(100); flyCoins('wheelbox', 14);
           setTimeout(()=>settle(j.balance, 1300), 950);   // paratë kreditohen PASI bie topi
           toast(`Fitore neto +${j.profit}€!`,'win');
         } else {
-          document.getElementById('rmsg').textContent='Topi ndali — humbët. Provo përsëri!';
+          document.getElementById('rmsg').textContent=`Topi ra në ${j.number} — humbët. Provo përsëri!`;
           setTimeout(()=>settle(j.balance, 700), 200);
           toast('Humbët '+bet+'€','lose');
         }

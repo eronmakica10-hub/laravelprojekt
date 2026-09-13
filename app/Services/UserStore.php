@@ -38,7 +38,7 @@ class UserStore
         return null;
     }
 
-    public static function create($name, $email, $password)
+    public static function create($name, $email, $password, $balance = 0, $extra = [])
     {
         $users = self::all();
         $user = [
@@ -46,12 +46,30 @@ class UserStore
             'name' => $name,
             'email' => $email,
             'password' => password_hash($password, PASSWORD_BCRYPT),
-            'balance' => 0,
+            'balance' => round($balance, 2),
+            'avatar' => $extra['avatar'] ?? '🦅',
+            'is_guest' => $extra['is_guest'] ?? false,
             'created_at' => now()->toDateTimeString(),
         ];
         $users[] = $user;
         self::save($users);
         return $user;
+    }
+
+    public static function update($id, array $data)
+    {
+        $users = self::all();
+        foreach ($users as &$u) {
+            if ($u['id'] == $id) {
+                foreach (['name', 'email', 'avatar', 'is_guest'] as $k) {
+                    if (array_key_exists($k, $data)) $u[$k] = $data[$k];
+                }
+                if (isset($data['password'])) $u['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
+                self::save($users);
+                return $u;
+            }
+        }
+        return null;
     }
 
     public static function updateBalance($id, $balance)

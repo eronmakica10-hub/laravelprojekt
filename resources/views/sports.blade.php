@@ -5,6 +5,15 @@
 <div class="slidein">
 <h1 class="text-4xl font-black neon-gold text-center">⚽ BASTORE SPORTIVE</h1>
 <p class="text-white/60 text-center">Kliko kuotat për të ndërtuar biletën • Kombino për fitore të mëdha!</p>
+<p class="text-white/40 text-center text-xs mt-1">1X2 • Shans i Dyfishtë (1X/12/X2) • GG/NG • Over/Under</p>
+<p class="text-center mt-2 text-sm">
+  @if(($offerSource ?? 'demo') === 'live')
+    <span class="inline-block bg-green-500/15 border border-green-500/40 text-green-200 font-bold px-4 py-1 rounded-full">✅ Ndeshje reale ({{ $offerProvider ?? '' }}) • {{ $offerDate ?? '' }}</span>
+    <div class="text-white/40 text-xs mt-1">Kuotat janë informative/demo — ndeshjet dhe oraret janë reale.</div>
+  @else
+    <span class="inline-block bg-amber-500/15 border border-amber-500/40 text-amber-200 font-bold px-4 py-1 rounded-full">📅 Oferta e ditës: {{ $offerDate ?? '' }} • Ndryshon automatikisht çdo ditë në 00:00</span>
+  @endif
+</p>
 
 <div class="grid lg:grid-cols-3 gap-6 mt-6">
   <div class="lg:col-span-2 space-y-4">
@@ -19,12 +28,24 @@
         </span>
       </div>
       <div class="font-black text-lg mt-1">{{ $m['home'] }} <span class="text-white/40">vs</span> {{ $m['away'] }}</div>
+      @php $si1=1/$m['o1']; $six=1/$m['ox']; $si2=1/$m['o2']; $st=$si1+$six+$si2; $sp1=round($si1/$st*100); $spx=round($six/$st*100); $sp2=100-$sp1-$spx; @endphp
+      <div class="flex h-1.5 rounded-full overflow-hidden mt-2 bg-white/10" title="Probabiliteti i nënkuptuar">
+        <div style="width:{{ $sp1 }}%;background:#3b82f6"></div><div style="width:{{ $spx }}%;background:#6b7280"></div><div style="width:{{ $sp2 }}%;background:#ef4444"></div>
+      </div>
+      <div class="flex justify-between text-[10px] text-white/40 mt-0.5 font-bold"><span>1 {{ $sp1 }}%</span><span>X {{ $spx }}%</span><span>2 {{ $sp2 }}%</span></div>
       <div class="grid grid-cols-5 gap-2 mt-3 text-center text-sm">
         <button class="odds-btn bg-white/10 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'1','{{ $m['home'] }}','{{ $m['o1'] }}')"><div class="text-[11px] text-white/50">1</div><div class="font-black">{{ number_format($m['o1'],2) }}</div></button>
         <button class="odds-btn bg-white/10 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'X','Barazim','{{ $m['ox'] }}')"><div class="text-[11px] text-white/50">X</div><div class="font-black">{{ number_format($m['ox'],2) }}</div></button>
         <button class="odds-btn bg-white/10 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'2','{{ $m['away'] }}','{{ $m['o2'] }}')"><div class="text-[11px] text-white/50">2</div><div class="font-black">{{ number_format($m['o2'],2) }}</div></button>
-        <button class="odds-btn bg-white/10 rounded-xl py-2 border border-green-500/30" onclick="toggle(this,{{ $m['id'] }},'Over 2.5','Over 2.5','{{ $m['over'] }}')"><div class="text-[11px] text-white/50">O 2.5</div><div class="font-black">{{ number_format($m['over'],2) }}</div></button>
-        <button class="odds-btn bg-white/10 rounded-xl py-2 border border-red-500/30" onclick="toggle(this,{{ $m['id'] }},'Under 2.5','Under 2.5','{{ $m['under'] }}')"><div class="text-[11px] text-white/50">U 2.5</div><div class="font-black">{{ number_format($m['under'],2) }}</div></button>
+        <button class="odds-btn bg-white/10 rounded-xl py-2 border border-green-500/30" onclick="toggle(this,{{ $m['id'] }},'Over {{ $m['line'] ?? '2.5' }}','Over {{ $m['line'] ?? '2.5' }}','{{ $m['over'] }}')"><div class="text-[11px] text-white/50">O {{ $m['line'] ?? '2.5' }}</div><div class="font-black">{{ number_format($m['over'],2) }}</div></button>
+        <button class="odds-btn bg-white/10 rounded-xl py-2 border border-red-500/30" onclick="toggle(this,{{ $m['id'] }},'Under {{ $m['line'] ?? '2.5' }}','Under {{ $m['line'] ?? '2.5' }}','{{ $m['under'] }}')"><div class="text-[11px] text-white/50">U {{ $m['line'] ?? '2.5' }}</div><div class="font-black">{{ number_format($m['under'],2) }}</div></button>
+      </div>
+      <div class="grid grid-cols-5 gap-2 mt-2 text-center text-sm">
+        <button class="odds-btn bg-sky-500/15 border border-sky-500/30 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'1X','Shans i dyfishtë 1X','{{ $m['dc1x'] ?? 1.5 }}')"><div class="text-[11px] text-white/50">1X</div><div class="font-black">{{ number_format($m['dc1x'] ?? 1.5,2) }}</div></button>
+        <button class="odds-btn bg-sky-500/15 border border-sky-500/30 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'12','Shans i dyfishtë 12','{{ $m['dc12'] ?? 1.5 }}')"><div class="text-[11px] text-white/50">12</div><div class="font-black">{{ number_format($m['dc12'] ?? 1.5,2) }}</div></button>
+        <button class="odds-btn bg-sky-500/15 border border-sky-500/30 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'X2','Shans i dyfishtë X2','{{ $m['dcx2'] ?? 1.5 }}')"><div class="text-[11px] text-white/50">X2</div><div class="font-black">{{ number_format($m['dcx2'] ?? 1.5,2) }}</div></button>
+        <button class="odds-btn bg-cyan-500/15 border border-cyan-500/30 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'GG','GG','{{ $m['gg'] ?? 1.8 }}')"><div class="text-[11px] text-white/50">GG</div><div class="font-black">{{ number_format($m['gg'] ?? 1.8,2) }}</div></button>
+        <button class="odds-btn bg-cyan-500/15 border border-cyan-500/30 rounded-xl py-2" onclick="toggle(this,{{ $m['id'] }},'NG','NG','{{ $m['ng'] ?? 1.8 }}')"><div class="text-[11px] text-white/50">NG</div><div class="font-black">{{ number_format($m['ng'] ?? 1.8,2) }}</div></button>
       </div>
       <div class="text-[11px] text-white/40 mt-1 match-label" data-match="{{ $m['id'] }}">{{ $m['home'] }} - {{ $m['away'] }}</div>
     </div>
@@ -108,5 +129,11 @@ async function simulate(){
   }catch(e){toast(e.message,'lose');}
 }
 render();
+(function autoRefreshAtMidnight(){
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 5, 0);
+  setTimeout(()=>location.reload(), midnight - now);
+})();
 </script>
 @endsection
