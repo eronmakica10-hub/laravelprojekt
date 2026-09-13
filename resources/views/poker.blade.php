@@ -170,11 +170,13 @@
     <span class="text-2xl">🎙️</span>
     <span id="commentTxt" class="font-black text-xl text-white">Mirësevjen në tavolinë! 🍀</span>
   </div>
-  <div id="roomBar" class="hidden glass rounded-2xl px-5 py-2.5 mb-2 flex items-center justify-center gap-3 border-emerald-500/40" style="border-width:2px">
+  <div id="roomBar" class="hidden glass rounded-2xl px-5 py-2.5 mb-2 flex items-center justify-center gap-3 border-emerald-500/40 flex-wrap" style="border-width:2px">
     <span class="text-xs text-white/50 font-black">DHOMA:</span>
     <span id="roomBarCode" class="text-2xl font-black tracking-[.25em] text-emerald-300">----</span>
     <button onclick="copyCode()" class="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl font-black text-sm">📋 Kopjo</button>
     <span id="roomBarCount" class="text-xs text-white/50 font-black"></span>
+    <button id="roomStartBtn" onclick="roomStart()" class="hidden px-5 py-2 rounded-xl btn-gold font-black">FILLO LOJËN ▶️</button>
+    <span id="roomWaitTxt" class="hidden text-xs text-amber-200 font-black">Prit adminin (hostin) të fillojë… ⏳</span>
   </div>
   <div class="text-center text-sm font-black text-white/60" id="streetLabel">LOBBY</div>
   <div id="ptable" class="mt-1">
@@ -397,10 +399,16 @@ function renderLobby(){
   document.getElementById('addBotBtn').style.display=ROOM.room.isHost?'':'none';
   document.getElementById('startBtn2').style.display=ROOM.room.isHost?'':'none';
   // shiriti i kodit mbi tavolinë — duket gjithmonë kur je në dhomë
+  // + butoni FILLO për adminin (hostin) sa dhoma është në lobby
   if(seated&&MODE==='on'&&CODE){
     bar.classList.remove('hidden');
     document.getElementById('roomBarCode').textContent=CODE;
     document.getElementById('roomBarCount').textContent=`${ROOM.room.count}/${ROOM.room.max||6} lojtarë`;
+    const inLobby=!S||S.street==='lobby';
+    const sb=document.getElementById('roomStartBtn');
+    const wt=document.getElementById('roomWaitTxt');
+    if(sb)sb.classList.toggle('hidden',!(ROOM.room.isHost&&inLobby));
+    if(wt)wt.classList.toggle('hidden',!(!ROOM.room.isHost&&inLobby));
   }else{
     bar.classList.add('hidden');
   }
@@ -641,6 +649,7 @@ function renderAll(){
   // mesazhi i statusit (+ sekondat kur e ke radhën — pas 40s hup radha: auto check/fold)
   const pm=document.getElementById('pmsg');
   if(v.street==='done')pm.textContent='Dora mbaroi.';
+  else if(v.street==='lobby')pm.textContent=(MODE==='on'?(ROOM&&ROOM.room.isHost?'Shpërndaje kodin shokëve, pastaj shtyp FILLO LOJËN ▶️':'Prit adminin të fillojë lojën ⏳'):'Prit...');
   else if(v.actor==null)pm.textContent='Prit...';
   else{
     let t=`Radha: ${v.players[v.actor].name}${v.actor===MYSEAT?' (TI!)':''}`;
