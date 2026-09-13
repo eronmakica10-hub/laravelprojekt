@@ -76,3 +76,14 @@ Route::post('/api/profile/password', [\App\Http\Controllers\ProfileController::c
 Route::get('/api/wallet/history', [\App\Http\Controllers\WalletController::class, 'history']);
 Route::post('/api/wallet/deposit', [\App\Http\Controllers\WalletController::class, 'deposit']);
 Route::post('/api/wallet/withdraw', [\App\Http\Controllers\WalletController::class, 'withdraw']);
+
+// SEO: sitemap dinamik për Google (URL-të ndërtohen nga APP_URL)
+Route::get('/sitemap.xml', function () {
+    $base = rtrim(config('app.url'), '/');
+    $pages = ['/', '/poker', '/slots', '/roulette', '/blackjack', '/dice', '/crash', '/mines', '/hilo', '/plinko', '/chicken', '/sports', '/login', '/register'];
+    $xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    foreach ($pages as $p) {
+        $xml .= '<url><loc>' . e($base . $p) . '</loc><changefreq>daily</changefreq><priority>' . ($p === '/' ? '1.0' : '0.8') . '</priority></url>';
+    }
+    return response($xml . '</urlset>', 200, ['Content-Type' => 'application/xml']);
+});

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>@yield('title', 'Kazino Online') | Golden Eagle Casino</title>
+<meta name="description" content="Golden Eagle Casino — poker Texas Hold'em online me shokë, slots, ruletë, blackjack dhe baste sportive. Luaj falas në telefon e kompjuter.">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
